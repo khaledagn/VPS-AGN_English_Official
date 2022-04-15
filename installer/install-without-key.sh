@@ -157,8 +157,8 @@ dependencias() {
 }
 
 post_reboot() {
-  echo 'wget -O /root/install.sh "https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/master/Instalador/install-without-key.sh"; clear; sleep 2; chmod +x /root/install.sh; /root/install.sh --continue' >>/root/.bashrc
-  title -verd "COMPLETE SYSTEM UPGRADE"
+  echo 'wget -O /root/install.sh "https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/master/installer/install-without-key.sh"; clear; sleep 2; chmod +x /root/install.sh; /root/install.sh --continue' >>/root/.bashrc
+  title -verd "COMPLETED SYSTEM UPGRADE"
   print_center -ama "The installation will continue\nafter rebooting!!!"
   msg -bar
 }
