@@ -45,8 +45,10 @@ BOT MANAGER:
 * It is recommended to use a new or formatted distro
 
 # Installation
-
+```
 rm -rf install-without-key.sh; apt update; apt upgrade -y; apt install curl; wget https://github.com/khaledagn/VPS-AGN_English_Official/raw/main/installer/install-without-key.sh; chmod 777 install-without-key.sh; ./install-without-key.sh --start
+
+```
 
 
 ## :octocat: Translated and Modded by KHALED AGN
