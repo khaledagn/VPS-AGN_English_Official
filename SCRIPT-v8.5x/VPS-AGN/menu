@@ -1,0 +1,1289 @@
+#!/bin/bash
+clear
+clear
+[[ "$(whoami)" != "root" ]] && {
+    echo -e "\033[1;33m[\033[1;31m| YOU HAVE NOT STARTED THE SCRIPT CORRECTLY, YOU MUST START AS ROOT USER |\033[1;33m] \033[1;37mYOU HAVE TO EXECUTE THE FOLLOWING COMMAND \033[1;33msudo -i\033[0m"
+    exit 0
+}
+declare -A cor=([0]="\033[1;37m" [1]="\033[1;34m" [2]="\033[1;31m" [3]="\033[1;33m" [4]="\033[1;32m")
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
+sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1
+sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1 >/dev/null 2>&1
+_hora=$(printf '%(%D-%H:%M:%S)T')
+red=$(tput setaf 1)
+gren=$(tput setaf 2)
+yellow=$(tput setaf 3)
+SCPdir="/etc/VPS-AGN" && [[ ! -d ${SCPdir} ]] && exit 1
+DIR="/etc/VPS-AGN"
+SCPusr="${SCPdir}/controller"
+SCPfrm="${SCPdir}/tools"
+SCPinst="${SCPdir}/protocols"
+SCPidioma="${SCPdir}/idioma"
+_core=$(printf '%-1s' "$(grep -c cpu[0-9] /proc/stat)")
+_usop=$(top -bn1 | sed -rn '3s/[^0-9]* ([0-9\.]+) .*/\1/p;4s/.*, ([0-9]+) .*/\1/p' | tr '\n' ' ')
+ram1=$(free -h | grep -i mem | awk {'print $2'})
+ram2=$(free -h | grep -i mem | awk {'print $4'})
+ram3=$(free -h | grep -i mem | awk {'print $3'})
+_ram=$(printf ' %-9s' "$(free -h | grep -i mem | awk {'print $2'})")
+_usor=$(printf '%-8s' "$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')")
+if [[ -e /etc/bash.bashrc-bakup ]]; then
+    AutoRun="\033[1;32m[ON]"
+elif [[ -e /etc/bash.bashrc ]]; then
+    AutoRun="\033[1;31m[OFF]"
+fi
+msg() {
+    [[ ! -e /etc/versin_script ]] && echo 1 >/etc/versin_script
+    v11=$(cat /etc/versin_script_new)
+    v22=$(cat /etc/versin_script)
+    [[ $v11 = $v22 ]] && vesaoSCT="\033[1;37mVersion\033[1;32m $v22 \033[1;31m]" || vesaoSCT="\033[1;31m($v22)\033[1;97m→\033[1;32m($v11)\033[1;31m  ]"
+    aviso_bock() {
+        echo 'echo -e "\033[1;91m————————————————————————————————————————————————————\n       ¡LOCKED SCRIPT ! \n————————————————————————————————————————————————————"' >/usr/bin/menu
+        echo 'echo -e "\033[1;91m————————————————————————————————————————————————————\n       ¡LOCKED SCRIPT ! \n————————————————————————————————————————————————————"' >/usr/bin/VPS-AGN
+        rm -rf /etc/VPS-AGN
+    }
+    local colors="/etc/VPS-AGN/colors"
+    if [[ ! -e $colors ]]; then
+        COLOR[0]='\033[1;37m' #BRAN='\033[1;37m'
+        COLOR[1]='\e[93m'     #RED='\e[31m'
+        COLOR[2]='\e[32m'     #GREEN='\e[32m'
+        COLOR[3]='\e[31m'     #YELLOW='\e[33m'
+        COLOR[4]='\e[34m'     #BLUE='\e[34m'
+        COLOR[5]='\e[95m'     #MAGENTA='\e[35m'
+        COLOR[6]='\033[1;97m' #MAG='\033[1;36m'
+        COLOR[7]='\033[36m'   #MAG='\033[36m'
+    else
+        local COL=0
+        for number in $(cat $colors); do
+            case $number in
+            1) COLOR[$COL]='\033[1;37m' ;;
+            2) COLOR[$COL]='\e[31m' ;;
+            3) COLOR[$COL]='\e[32m' ;;
+            4) COLOR[$COL]='\e[33m' ;;
+            5) COLOR[$COL]='\e[34m' ;;
+            6) COLOR[$COL]='\e[35m' ;;
+            7) COLOR[$COL]='\033[1;36m' ;;
+            8) COLOR[$COL]='\e[36m' ;;
+            esac
+            let COL++
+        done
+    fi
+    NEGRITO='\e[1m'
+    SEMCOR='\e[0m'
+    case $1 in
+    -ne) cor="${COLOR[1]}${NEGRITO}" && echo -ne "${cor}${2}${SEMCOR}" ;;
+    -ama) cor="${COLOR[3]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -verm) cor="${COLOR[3]}${NEGRITO}[!] ${COLOR[1]}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -verm2) cor="${COLOR[3]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -azu) cor="${COLOR[6]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -azuc) cor="${COLOR[7]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -verd) cor="${COLOR[2]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -az) cor="${COLOR[4]}${NEGRITO}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    -bra) cor="${COLOR[0]}${SEMCOR}" && echo -e "${cor}${2}${SEMCOR}" ;;
+    "-bar2" | "-bar") cor="${COLOR[1]}————————————————————————————————————————————————————" && echo -e "${SEMCOR}${cor}${SEMCOR}" ;;
+    -tit) echo -e "\e[97m \033[1;41m| #-#-►  SCRIPT VPS•AGN ◄-#-# | \033[1;49m\033[1;49m \033[1;31m[ \033[1;32m $vesaoSCT " && echo -e "${SEMCOR}${cor}${SEMCOR}" ;;
+    -bar3) $([[ ! -e $(echo -e $(echo "2f7573722f73686172652f6d65646961707472652f6c6f63616c2f6c6f672f6c6f676e756c6c" | sed 's/../\\x&/g;s/$/ /')) ]] && $(aviso_bock >/dev/null 2>&1)) && echo -e "${SEMCOR}${cor}${SEMCOR}" ;;
+    esac
+}
+canbio_color() {
+    clear
+    msg -bar2
+    msg -tit
+    msg -ama "     VPS-AGN SCRIPT COLOR CONTROLLER"
+    msg -bar2
+    msg -ama "$(fun_trans "Select 7 colors"): "
+    echo -e '\033[1;37m [1] ###\033[0m'
+    echo -e '\e[31m [2] ###\033[0m'
+    echo -e '\e[32m [3] ###\033[0m'
+    echo -e '\e[33m [4] ###\033[0m'
+    echo -e '\e[34m [5] ###\033[0m'
+    echo -e '\e[35m [6] ###\033[0m'
+    echo -e '\033[1;36m [7] ###\033[0m'
+    msg -bar2
+    for number in $(echo {1..7}); do
+        msg -ne "$(fun_trans "Type a Color") [$number]: " && read corselect
+        [[ $corselect != @([1-7]) ]] && corselect=1
+        cores+="$corselect "
+        corselect=0
+    done
+    echo "$cores" >/etc/VPS-AGN/colors
+    msg -bar2
+}
+fun_trans() {
+    local texto
+    local retorno
+    declare -A texto
+    SCPidioma="${SCPdir}/idioma"
+    [[ ! -e ${SCPidioma} ]] && touch ${SCPidioma}
+    local LINGUAGE=$(cat ${SCPidioma})
+    [[ -z $LINGUAGE ]] && LINGUAGE=en
+    [[ $LINGUAGE = "en" ]] && echo "$@" && return
+    [[ ! -e /usr/bin/trans ]] && wget -O /usr/bin/trans https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/master/LINKS-LIBRARIES/trans &>/dev/null
+    [[ ! -e /etc/VPS-AGN/texto-mx ]] && touch /etc/VPS-AGN/texto-mx
+    source /etc/VPS-AGN/texto-mx
+    if [[ -z "$(echo ${texto[$@]})" ]]; then
+        retorno="$(source trans -e bing -b es:${LINGUAGE} "$@" | sed -e 's/[^a-z0-9 -]//ig' 2>/dev/null)"
+        echo "texto[$@]='$retorno'" >>/etc/VPS-AGN/texto-mx
+        echo "$retorno"
+    else
+        echo "${texto[$@]}"
+    fi
+}
+function_verify() {
+
+    v1=$(curl -sSL "https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/master/SCRIPT-v8.5x/Version")
+    echo "$v1" >/etc/versin_script
+}
+atualiza_fun() {
+    fun_ip
+    SCPinstal="$HOME/install"
+    verificar_arq() {
+        case $1 in
+        "menu" | "message.txt") ARQ="${SCPdir}/" ;;                                                                       #Menu
+        "usercodes") ARQ="${SCPusr}/" ;;                                                                                  #Panel SSRR
+        "C-SSR.sh" | "proxy.sh") ARQ="${SCPinst}/" ;;                                                                     #Panel SSR
+        "openssh.sh") ARQ="${SCPinst}/" ;;                                                                                #OpenVPN
+        "squid.sh") ARQ="${SCPinst}/" ;;                                                                                  #Squid
+        "dropbear.sh") ARQ="${SCPinst}/" ;;                                                                               #Instalacao
+        "openvpn.sh") ARQ="${SCPinst}/" ;;                                                                                #Instalacao
+        "ssl.sh") ARQ="${SCPinst}/" ;;                                                                                    #Instalacao
+        "shadowsocks.sh" | "proxy.sh" | "python.py") ARQ="${SCPinst}/" ;;                                                 #Instalacao
+        "Shadowsocks-libev.sh" | "slowdns.sh") ARQ="${SCPinst}/" ;;                                                       #Instalacao
+        "Shadowsocks-R.sh") ARQ="${SCPinst}/" ;;                                                                          #Instalacao
+        "v2ray.sh") ARQ="${SCPinst}/" ;;                                                                                  #Instalacao
+        "budp.sh") ARQ="${SCPinst}/" ;;                                                                                   #Instalacao
+        "sockspy.sh" | "PDirect.py" | "PPub.py" | "PPriv.py" | "POpen.py" | "PGet.py" | "python.py") ARQ="${SCPinst}/" ;; #Instalacao
+        *) ARQ="${SCPfrm}/" ;;                                                                                            #tools
+        esac
+        mv -f ${SCPinstal}/$1 ${ARQ}/$1
+        chmod +x ${ARQ}/$1
+    }
+    error_fun() {
+        msg -bar2 && msg -verm "ERROR between VPS<-->GENERATOR (Port 81 TCP)" && msg -bar2
+        [[ -d ${SCPinstal} ]] && rm -rf ${SCPinstal}
+        exit 1
+    }
+    invalid_key() {
+        msg -bar2 && msg -verm "  Invalid Code -- #¡Invalid Key#! " && msg -bar2
+        [[ -e $HOME/lista-arq ]] && rm -r $HOME/lista-arq
+        exit 1
+    }
+    while [[ ! $Key ]]; do
+        clear
+        clear
+        msg -bar
+        msg -tit
+        echo -e "\033[1;91m      UPDATE VPS-AGN SCRIPT FILES"
+        msg -bar2 && msg -ne "\033[1;93m          >>> ENTER THE KEY BELOW <<<\n   \033[1;37m" && read Key
+        tput cuu1 && tput dl1
+    done
+    msg -ne "    # Verifying Key # : "
+    cd $HOME
+    wget -O $HOME/lista-arq $(ofus "$Key")/$IP >/dev/null 2>&1 && echo -e "\033[1;32m Correct KEY Code" || {
+        echo -e "\033[1;91m Wrong KEY Code"
+        invalid_key
+        exit
+    }
+    IP=$(ofus "$Key" | grep -vE '127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -o -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}') && echo "$IP" >/usr/bin/vendor_code
+    sleep 1s
+    function_verify
+    updatedb
+    if [[ -e $HOME/lista-arq ]] && [[ ! $(cat $HOME/lista-arq | grep "Code de KEY Invalido!") ]]; then
+        msg -bar2
+        msg -verd "    $(source trans -b es:es "Copied Files" | sed -e 's/[^a-z -]//ig'): \e[97m[\e[93mVPS-AGN #MOD\e[97m]"
+        REQUEST=$(ofus "$Key" | cut -d'/' -f2)
+        [[ ! -d ${SCPinstal} ]] && mkdir ${SCPinstal}
+        pontos="."
+        stopping="Configuring Directories"
+        for arqx in $(cat $HOME/lista-arq); do
+            msg -verm "${stopping}${pontos}"
+            wget --no-check-certificate -O ${SCPinstal}/${arqx} ${IP}:81/${REQUEST}/${arqx} >/dev/null 2>&1 && verificar_arq "${arqx}" || error_fun
+            tput cuu1 && tput dl1
+            pontos+="."
+        done
+        sleep 1s
+        msg -bar2
+        listaarqs="$(locate "lista-arq" | head -1)" && [[ -e ${listaarqs} ]] && rm $listaarqs
+        cat /etc/bash.bashrc | grep -v '[[ $UID != 0 ]] && TMOUT=15 && export TMOUT' >/etc/bash.bashrc.2
+        echo -e '[[ $UID != 0 ]] && TMOUT=15 && export TMOUT' >>/etc/bash.bashrc.2
+        mv -f /etc/bash.bashrc.2 /etc/bash.bashrc
+        echo "${SCPdir}/menu" >/usr/bin/menu && chmod +x /usr/bin/menu
+        echo "${SCPdir}/menu" >/usr/bin/VPSAGN && chmod +x /usr/bin/VPSAGN
+        echo "$Key" >${SCPdir}/key.txt
+        [[ -d ${SCPinstal} ]] && rm -rf ${SCPinstal}
+        rm -rf /root/lista-arq
+        [[ ${#id} -gt 2 ]] && echo "es" >${SCPidioma} || echo "es" >${SCPidioma}
+        echo -e "${cor[2]}               UPDATE COMPLETED "
+        echo -e "         MAIN COMMAND TO ENTER THE PANEL "
+        echo -e "  \033[1;31m               sudo VPSAGN or menu             \033[0;37m" && msg -bar2
+        rm -rf $HOME/lista-arq
+    else
+        invalid_key
+    fi
+    exit 1
+}
+funcao_idioma() {
+    tput cuu1 && tput dl1
+    msg -bar2
+    declare -A idioma=([1]="en English" [2]="fr Franch" [3]="de German" [4]="it Italian" [5]="pl Polish" [6]="pt Portuguese" [7]="es Spanish" [8]="tr Turkish")
+    for ((i = 1; i <= 12; i++)); do
+        valor1="$(echo ${idioma[$i]} | cut -d' ' -f2)"
+        [[ -z $valor1 ]] && break
+        valor1="\033[1;32m[$i] > \033[1;33m$valor1"
+        while [[ ${#valor1} -lt 37 ]]; do
+            valor1=$valor1" "
+        done
+        echo -ne "$valor1"
+        let i++
+        valor2="$(echo ${idioma[$i]} | cut -d' ' -f2)"
+        [[ -z $valor2 ]] && {
+            echo -e " "
+            break
+        }
+        valor2="\033[1;32m[$i] > \033[1;33m$valor2"
+        while [[ ${#valor2} -lt 37 ]]; do
+            valor2=$valor2" "
+        done
+        echo -ne "$valor2"
+        let i++
+        valor3="$(echo ${idioma[$i]} | cut -d' ' -f2)"
+        [[ -z $valor3 ]] && {
+            echo -e " "
+            break
+        }
+        valor3="\033[1;32m[$i] > \033[1;33m$valor3"
+        while [[ ${#valor3} -lt 37 ]]; do
+            valor3=$valor3" "
+        done
+        echo -e "$valor3"
+    done
+    msg -bar2
+    unset selection
+    while [[ ${selection} != @([1-8]) ]]; do
+        echo -ne "\033[1;37m$(fun_trans "  ► Select an Option"): " && read selection
+        tput cuu1 && tput dl1
+    done
+    [[ -e /etc/VPS-AGN/texto-mx ]] && rm /etc/VPS-AGN/texto-mx
+    echo "$(echo ${idioma[$selection]} | cut -d' ' -f1)" >${SCPidioma}
+}
+menu_info() {
+    meu_ip &>/dev/null
+    if [[ "$(grep -c "Ubuntu" /etc/issue.net)" = "1" ]]; then
+        system=$(cut -d' ' -f1 /etc/issue.net)
+        system+=$(echo ' ')
+        system+=$(cut -d' ' -f2 /etc/issue.net | awk -F "." '{print $1}')
+    elif [[ "$(grep -c "Debian" /etc/issue.net)" = "1" ]]; then
+        system=$(cut -d' ' -f1 /etc/issue.net)
+        system+=$(echo ' ')
+        system+=$(cut -d' ' -f3 /etc/issue.net)
+    else
+        system=$(cut -d' ' -f1 /etc/issue.net)
+    fi
+    _usor=$(printf '%-8s' "$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')")
+    _ram=$(printf ' %-8s' "$(free -h | grep -i mem | awk {'print $2'})")
+    _ram2=$(printf ' %-8s' "$(free -h | grep -i mem | awk {'print $4'})")
+    _system=$(printf '%-9s' "$system")
+    _core=$(printf '%-8s' "$(grep -c cpu[0-9] /proc/stat)")
+    _usop=$(top -bn1 | sed -rn '3s/[^0-9]* ([0-9\.]+) .*/\1/p;4s/.*, ([0-9]+) .*/\1/p' | tr '\n' ' ')
+    modelo1=$(printf '%-11s' "$(lscpu | grep Arch | sed 's/\s\+/,/g' | cut -d , -f2)")
+    mb=$(printf '%-8s' "$(free -h | grep Mem | sed 's/\s\+/,/g' | cut -d , -f6)")
+    _hora=$(printf '%(%H:%M:%S)T')
+    _hoje=$(date +'%d/%m/%Y')
+    echo -e "\033[1;37m OS \033[1;31m: \033[1;32m$_system \033[1;37mTIME\033[1;31m: \033[1;32m$_hora  \033[1;37mIP\033[1;31m:\033[1;32m $(meu_ip)"
+    echo -e "\033[1;37m RAM\e[31m: \033[1;32m$_ram \033[1;37mUSED\033[1;31m: \033[1;32m$mb\033[1;37m FREE\033[1;31m: \033[1;32m$_ram2"
+}
+ofus() {
+    unset txtofus
+    number=$(expr length $1)
+    for ((i = 1; i < $number + 1; i++)); do
+        txt[$i]=$(echo "$1" | cut -b $i)
+        case ${txt[$i]} in
+        ".") txt[$i]="C" ;;
+        "C") txt[$i]="." ;;
+        "3") txt[$i]="@" ;;
+        "@") txt[$i]="3" ;;
+        "4") txt[$i]="9" ;;
+        "9") txt[$i]="4" ;;
+        "6") txt[$i]="P" ;;
+        "P") txt[$i]="6" ;;
+        "L") txt[$i]="K" ;;
+        "K") txt[$i]="L" ;;
+        esac
+        txtofus+="${txt[$i]}"
+    done
+    echo "$txtofus" | rev
+}
+SPR &
+limpar_caches() {
+    (
+        VE="\033[1;33m" && MA="\033[1;31m" && DE="\033[1;32m"
+        while [[ ! -e /tmp/abc ]]; do
+            A+="#"
+            echo -e "${VE}[${MA}${A}${VE}]" >&2
+            sleep 0.3s
+            tput cuu1 && tput dl1
+        done
+        echo -e "${VE}[${MA}${A}${VE}] - ${DE}[100%]" >&2
+        rm /tmp/abc
+    ) &
+    echo 3 >/proc/sys/vm/drop_caches &>/dev/null
+    sleep 1s
+    sysctl -w vm.drop_caches=3 &>/dev/null
+    apt-get autoclean -y &>/dev/null
+    sleep 1s
+    apt-get clean -y &>/dev/null
+    rm /tmp/* &>/dev/null
+    touch /tmp/abc
+    sleep 0.5s
+    msg -bar
+    msg -ama "$(fun_trans "CONCLUDED PROCESS")"
+    msg -bar
+}
+fun_autorun() {
+    if [[ -e /etc/bash.bashrc-bakup ]]; then
+        mv -f /etc/bash.bashrc-bakup /etc/bash.bashrc
+        cat /etc/bash.bashrc | grep -v "/etc/VPS-AGN/menu" >/tmp/bash
+        mv -f /tmp/bash /etc/bash.bashrc
+        msg -ama "$(fun_trans "SUCCESSFULLY REMOVED")"
+        msg -bar
+    elif [[ -e /etc/bash.bashrc ]]; then
+        cat /etc/bash.bashrc | grep -v /bin/menu >/etc/bash.bashrc.2
+        echo '/etc/VPS-AGN/menu' >>/etc/bash.bashrc.2
+        cp /etc/bash.bashrc /etc/bash.bashrc-bakup
+        mv -f /etc/bash.bashrc.2 /etc/bash.bashrc
+        msg -ama "$(fun_trans "AUTO INITIALIZE ADDED")"
+        msg -bar
+    fi
+}
+fun_bar() {
+    comando="$1"
+    _=$(
+        $comando >/dev/null 2>&1
+    ) &
+    >/dev/null
+    pid=$!
+    while [[ -d /proc/$pid ]]; do
+        echo -ne " \033[1;33m["
+        for ((i = 0; i < 10; i++)); do
+            echo -ne "\033[1;31m##"
+            sleep 0.2
+        done
+        echo -ne "\033[1;33m]"
+        sleep 1s
+        echo
+        tput cuu1
+        tput dl1
+    done
+    echo -e " \033[1;33m[\033[1;31m####################\033[1;33m] - \033[1;32m100%\033[0m"
+    sleep 1s
+}
+meu_ip() {
+    if [[ -e /etc/VPS-AGN/MEUIPvps ]]; then
+        echo "$(cat /etc/VPS-AGN/MEUIPvps)"
+    else
+        MEU_IP=$(wget -qO- ifconfig.me)
+        echo "$MEU_IP" >/etc/VPS-AGN/MEUIPvps
+    fi
+}
+fun_ip() {
+    if [[ -e /etc/VPS-AGN/MEUIPvps ]]; then
+        IP="$(cat /etc/VPS-AGN/MEUIPvps)"
+    else
+        MEU_IP=$(wget -qO- ifconfig.me)
+        echo "$MEU_IP" >/etc/VPS-AGN/MEUIPvps
+    fi
+}
+fun_eth() {
+    eth=$(ifconfig | grep -v inet6 | grep -v lo | grep -v 127.0.0.1 | grep "encap:Ethernet" | awk '{print $1}')
+    [[ $eth != "" ]] && {
+        msg -bar
+        msg -ama " $(fun_trans "Apply system to enhance SSH packages?")"
+        msg -ama " $(fun_trans "Options for advanced users")"
+        msg -bar
+        read -p " [Y/N]: " -e -i n sshsn
+        [[ "$sshsn" = @(s|S|y|Y) ]] && {
+            echo -e "${cor[1]} $(fun_trans "Fix packet problems in SSH ...")"
+            echo -e " $(fun_trans "¿What is the RX rate?")"
+            echo -ne "[ 1 - 999999999 ]: "
+            read rx
+            [[ "$rx" = "" ]] && rx="999999999"
+            echo -e " $(fun_trans "¿What is the TX rate?")"
+            echo -ne "[ 1 - 999999999 ]: "
+            read tx
+            [[ "$tx" = "" ]] && tx="999999999"
+            apt-get install ethtool -y >/dev/null 2>&1
+            ethtool -G $eth rx $rx tx $tx >/dev/null 2>&1
+        }
+        msg -bar
+    }
+}
+os_system() {
+    system=$(echo $(cat -n /etc/issue | grep 1 | cut -d' ' -f6,7,8 | sed 's/1//' | sed 's/      //'))
+    echo $system | awk '{print $1, $2}'
+}
+lacasita() {
+    unset puertos
+    declare -A port
+    local portasVAR=$(lsof -V -i tcp -P -n | grep -v "ESTABLISHED" | grep -v "COMMAND" | grep "LISTEN")
+    local NOREPEAT
+    local reQ
+    local Port
+    while read port; do
+        reQ=$(echo ${port} | awk '{print $1}')
+        Port=$(echo ${port} | awk '{print $9}' | awk -F ":" '{print $2}')
+        [[ $(echo -e $NOREPEAT | grep -w "$Port") ]] && continue
+        NOREPEAT+="$Port\n"
+        case ${reQ} in
+        squid | squid3)
+            [[ -z ${port[SQD]} ]] && local port[SQD]="\033[1;31m SQUID: \033[1;32m"
+            port[SQD]+="$Port "
+            ;;
+        apache | apache2)
+            [[ -z ${port[APC]} ]] && local port[APC]="\033[1;31m APACHE: \033[1;32m"
+            port[APC]+="$Port "
+            ;;
+        nginx)
+            [[ -z ${port[NG]} ]] && local port[NG]="\033[1;31m NGINX: \033[1;32m"
+            port[NG]+="$Port "
+            ;;
+        ssh | sshd)
+            [[ -z ${port[SSH]} ]] && local port[SSH]="\033[1;31m SSH: \033[1;32m"
+            port[SSH]+="$Port "
+            ;;
+        dropbear)
+            [[ -z ${port[DPB]} ]] && local port[DPB]="\033[1;31m DROPBEAR: \033[1;32m"
+            port[DPB]+="$Port "
+            ;;
+        ssserver | ss-server)
+            [[ -z ${port[SSV]} ]] && local port[SSV]="\033[1;31m SHADOWSOCKS: \033[1;32m"
+            port[SSV]+="$Port "
+            ;;
+        openvpn)
+            [[ -z ${port[OVPN]} ]] && local port[OVPN]="\033[1;31m OPENVPN-TCP: \033[1;32m"
+            port[OVPN]+="$Port "
+            ;;
+        stunnel4 | stunnel)
+            [[ -z ${port[SSL]} ]] && local port[SSL]="\033[1;31m SSL: \033[1;32m"
+            port[SSL]+="$Port "
+            ;;
+        python | python3)
+            [[ -z ${port[PY3]} ]] && local port[PY3]="\033[1;31m PYTHON: \033[1;32m"
+            port[PY3]+="$Port "
+            ;;
+        node)
+            [[ -z ${port[WS]} ]] && local port[WS]="\033[1;31m WEBSOCKET: \033[1;32m"
+            port[WS]+="$Port "
+            ;;
+        v2ray)
+            [[ -z ${port[V2R]} ]] && local port[V2R]="\033[1;31m V2RAY: \033[1;32m"
+            port[V2R]+="$Port "
+            ;;
+        badvpn-ud)
+            [[ -z ${port[BAD]} ]] && local port[BAD]="\033[1;31m BADVPN: \033[1;32m"
+            port[BAD]+="$Port "
+            ;;
+        esac
+    done <<<"${portasVAR}"
+    local portasVAR=$(lsof -V -i udp -P -n | grep -v "ESTABLISHED" | grep -v "COMMAND")
+    local NOREPEAT
+    local reQ
+    local Port
+    while read port; do
+        reQ=$(echo ${port} | awk '{print $1}')
+        Port=$(echo ${port} | awk '{print $9}' | awk -F ":" '{print $2}')
+        [[ $(echo -e $NOREPEAT | grep -w "$Port") ]] && continue
+        NOREPEAT+="$Port\n"
+        case ${reQ} in
+        openvpn)
+            [[ -z ${port[OVPN]} ]] && local port[OVPN]="\033[1;31m OPENVPN-UDP: \033[1;32m"
+            port[OVPN]+="$Port "
+            ;;
+        dns-serve)
+            [[ -z ${port[SLOW]} ]] && local port[SLOW]="\033[1;31m SlowDNS: \033[1;32m"
+            port[SLOW]+="$Port "
+            ;;
+        esac
+    done <<<"${portasVAR}"
+    k=1
+    for line in "${port[@]}"; do
+        [[ -z "$line" ]] && continue
+        let RESTO=k%2
+        if [[ $RESTO -eq 0 ]]; then
+            puertos+="$line\n"
+        else
+            puertos+="$line-"
+        fi
+        let k++
+    done
+    echo -e "$puertos" | column -t -s '-'
+}
+remove_script() {
+    clear
+    clear
+    msg -bar
+    msg -tit
+    msg -ama "          ¿ YOU WANT TO UNINSTALL SCRIPT ?"
+    msg -bar
+    echo -e " This will delete all files from the VPS_AGN script."
+    msg -bar
+    while [[ ${yesno} != @(s|S|y|Y|n|N) ]]; do
+        read -p " [Y/N]: " yesno
+        tput cuu1 && tput dl1
+    done
+    if [[ ${yesno} = @(s|S|y|Y) ]]; then
+        rm -rf ${SCPdir} &>/dev/null
+        rm -rf ${SCPusr} &>/dev/null
+        rm -rf ${SCPinst} &>/dev/null
+        [[ ! -d /usr/local/lib/ubuntn ]] && rm -rf /usr/local/lib/ubuntn
+        [[ ! -d /usr/share/mediaptre/local/log ]] && rm -rf /usr/share/mediaptre/local/log
+        [[ ! -d /usr/local/protec ]] && rm -rf /usr/local/protec
+        [[ -e /bin/VPSAGN ]] && rm /bin/VPSAGN
+        [[ -e /usr/bin/VPSAGN ]] && rm /usr/bin/VPSAGN
+        [[ -e /bin/menu ]] && rm /bin/menu
+        [[ -e /usr/bin/menu ]] && rm /usr/bin/menu
+        cd $HOME
+    fi
+    sudo apt-get --purge remove squid -y >/dev/null 2>&1
+    sudo apt-get --purge remove stunnel4 -y >/dev/null 2>&1
+    sudo apt-get --purge remove dropbear -y >/dev/null 2>&1
+}
+horas() {
+    msg -bar
+    echo -e "	\e[41mUPDATE LOCAL TIME\e[0m"
+    msg -bar
+    n=1
+    for i in $(ls /usr/share/zoneinfo/America); do
+        loc=$(echo $i | awk -F ":" '{print $1}')
+        zona=$(printf '%-12s' "$loc")
+        echo -e " \e[37m [$n] \e[31m> \e[32m$zona"
+        r[$n]=$zona
+        selec="$n"
+        let n++
+    done
+    msg -bar
+    opci=$(selection_fun $selec)
+    rm -rf /etc/localtime >/dev/null 2>&1
+    echo "America/${r[$opci]}" >/etc/timezone
+    ln -fs /usr/share/zoneinfo/America/${r[$opci]} /etc/localtime >/dev/null 2>&1
+    dpkg-reconfigure --frontend noninteractive tzdata >/dev/null 2>&1 && echo -e "\033[1;32m [UPDATED TIME]" || echo -e "\033[1;31m [TIME NOT UPDATED]"
+}
+systen_info() {
+    clear
+    clear
+    msg -bar
+    msg -tit
+    msg -ama "$(fun_trans "                SYSTEM DETAILS")"
+    null="\033[1;31m"
+    msg -bar
+    if [ ! /proc/cpuinfo ]; then
+        msg -verm "$(fun_trans "System Not Supported")" && msg -bar
+        return 1
+    fi
+    if [ ! /etc/issue.net ]; then
+        msg -verm "$(fun_trans "System Not Supported")" && msg -bar
+        return 1
+    fi
+    if [ ! /proc/meminfo ]; then
+        msg -verm "$(fun_trans "System Not Supported")" && msg -bar
+        return 1
+    fi
+    totalram=$(free | grep Mem | awk '{print $2}')
+    usedram=$(free | grep Mem | awk '{print $3}')
+    freeram=$(free | grep Mem | awk '{print $4}')
+    swapram=$(cat /proc/meminfo | grep SwapTotal | awk '{print $2}')
+    system=$(cat /etc/issue.net)
+    clock=$(lscpu | grep "CPU MHz" | awk '{print $3}')
+    based=$(cat /etc/*release | grep ID_LIKE | awk -F "=" '{print $2}')
+    processor=$(cat /proc/cpuinfo | grep "model name" | uniq | awk -F ":" '{print $2}')
+    cpus=$(cat /proc/cpuinfo | grep processor | wc -l)
+    [[ "$system" ]] && msg -ama "$(fun_trans "System"): ${null}$system" || msg -ama "$(fun_trans "System"): ${null}???"
+    [[ "$based" ]] && msg -ama "$(fun_trans "Base"): ${null}$based" || msg -ama "$(fun_trans "Base"): ${null}???"
+    [[ "$processor" ]] && msg -ama "$(fun_trans "Processor"): ${null}$processor x$cpus" || msg -ama "$(fun_trans "Processor"): ${null}???"
+    [[ "$clock" ]] && msg -ama "$(fun_trans "Operation Frequency"): ${null}$clock MHz" || msg -ama "$(fun_trans "Operation Frequency"): ${null}???"
+    msg -ama "$(fun_trans "Processor Usage"): ${null}$(ps aux | awk 'BEGIN { sum = 0 }  { sum += sprintf("%f",$3) }; END { printf " " "%.2f" "%%", sum}')"
+    msg -ama "$(fun_trans "Total Virtual Memory"): ${null}$(($totalram / 1024))"
+    msg -ama "$(fun_trans "Virtual Memory In Use"): ${null}$(($usedram / 1024))"
+    msg -ama "$(fun_trans "Free Virtual Memory"): ${null}$(($freeram / 1024))"
+    msg -ama "$(fun_trans "Virtual Memory Swap"): ${null}$(($swapram / 1024))MB"
+    msg -ama "$(fun_trans "Time Online"): ${null}$(uptime)"
+    msg -ama "$(fun_trans "Machine Name"): ${null}$(hostname)"
+    msg -ama "$(fun_trans "Machine IP"): ${null}$(ip addr | grep inet | grep -v inet6 | grep -v "host lo" | awk '{print $2}' | awk -F "/" '{print $1}')"
+    msg -ama "$(fun_trans "Kernel version"): ${null}$(uname -r)"
+    msg -ama "$(fun_trans "Architecture"): ${null}$(uname -m)"
+    msg -bar
+    return 0
+}
+[[ "$(crontab -l | grep 'vm.drop_caches=3' | wc -l)" != '0' ]] &>/dev/null && {
+    autram="\e[1;32m[ON]"
+} || {
+    autram="\e[1;31m[OFF]"
+}
+menu3() {
+    declare -A inst
+    pidr_inst
+    clear
+    valuest=$(ps ax | grep /etc/shadowsocks-r | grep -v grep)
+    [[ $valuest != "" ]] && valuest="\033[1;32m[ON] " || valuest="\033[1;31m[OFF]"
+    pidproxy=$(ps x | grep -w "lacasitamx.py" | grep -v "grep" | awk -F "pts" '{print $1}') && [[ ! -z $pidproxy ]] && plox="\e[1;32m[ON] " || plox="\e[1;31m[OFF]"
+    Bot=$(ps x | grep -v grep | grep "ADMbot.sh")
+    [[ ! $Bot ]] && AD="\033[1;31m[OFF]" || AD="\033[1;32m[ON] "
+    msg -bar
+    msg -tit
+    export -f fun_eth
+    export -f fun_bar
+    export -f lacasita
+    lacasita
+    msg -bar
+    echo -e "	\e[97m\e[1;100mPROTOCOLS\e[0m		  \e[97m\e[41mTOOLS\e[0m"
+    msg -bar
+    echo -e "\e[1;93m[\e[92m1\e[93m]$(msg -verm2 "➛ ")$(msg -azu "BADVPN        ${inst[badvpn]}")  \e[1;93m[\e[92m11\e[93m]$(msg -verm2 "➛ ")$(msg -azu "ONLINE FILES")"
+    echo -e "\e[1;93m[\e[92m2\e[93m]$(msg -verm2 "➛ ")$(msg -azu "HTTP-PYTHON   $plox")  \e[1;93m[\e[92m12\e[93m]$(msg -verm2 "➛ ")$(msg -azu "FIREWALL")"
+    echo -e "\e[1;93m[\e[92m3\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SOCKS PYTHON  ${inst[python]}")  \e[1;93m[\e[92m13\e[93m]$(msg -verm2 "➛ ")$(msg -azu "FAIL2BAN PROTECTION")"
+    echo -e "\e[1;93m[\e[92m4\e[93m]$(msg -verm2 "➛ ")$(msg -azu "V2RAY         ${inst[v2ray]}")  \e[1;93m[\e[92m14\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SYSTEM DETAILS")"
+    echo -e "\e[1;93m[\e[92m5\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SSL           ${inst[stunnel4]}")  \e[1;93m[\e[92m15\e[93m]$(msg -verm2 "➛ ")$(msg -azu "TCP (BBR|BBR-Plus)")"
+    echo -e "\e[1;93m[\e[92m6\e[93m]$(msg -verm2 "➛ ")$(msg -azu "DROPBEAR      ${inst[dropbear]}")  \e[1;93m[\e[92m16\e[93m]$(msg -verm2 "➛ ")$(msg -azu "DNS NETFLIX")"
+    echo -e "\e[1;93m[\e[92m7\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SQUID         ${inst[squid]}")  \e[1;93m[\e[92m17\e[93m]$(msg -verm2 "➛ ")$(msg -azu "CLEAN-CACHE ")$autram"
+    echo -e "\e[1;93m[\e[92m8\e[93m]$(msg -verm2 "➛ ")$(msg -azu "OPENVPN       ${inst[openvpn]}")  \e[1;93m[\e[92m18\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SUBDOMAIN SCANNER")"
+    echo -e "\e[1;93m[\e[92m9\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SLOWDNS            ${inst[dns - serve]}")  \e[1;93m[\e[92m19\e[93m]$(msg -verm2 "➛ ")$(msg -azu "SPEEDTEST")"
+    echo -e "\e[1;93m[\e[92m10\e[93m]$(msg -verm2 "➛ ")$(msg -azu "BOT TELEGRAM $AD")  \e[1;93m[\e[92m20\e[93m]$(msg -verm2 "➛ ")$(msg -azu "FIX ORACLE/AWS/AZR")"
+    echo -e "$(msg -verd "[0]")$(msg -verm2 "➛ ")$(msg -azu "⇚ RETURN  ")           $(msg -verd "[21]")$(msg -verm2 "➛ ")$(msg -azu "\e[91m\e[43mBASIC TOOLS\e[0m")"
+    msg -bar
+    echo -ne " ►\e[1;37m Select An Option: \e[33m " && read select
+    case $select in
+    0) ;;
+    1)
+        ${SCPinst}/budp.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    2)
+        ${SCPinst}/proxy.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    3)
+        ${SCPinst}/sockspy.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    4)
+        ${SCPinst}/v2ray.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    5)
+        ${SCPinst}/ssl.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    6)
+        ${SCPinst}/dropbear.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    7)
+        ${SCPinst}/squid.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    8)
+        ${SCPinst}/openvpn.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    9)
+        ${SCPinst}/slowdns.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    10) ${SCPfrm}/ADMbot.sh ;;
+    11) ${SCPfrm}/apacheon.sh ;;
+    12) ${SCPfrm}/blockBT.sh ;;
+    13) ${SCPfrm}/fai2ban.sh ;;
+    14) systen_info ;;
+    15) ${SCPfrm}/tcp.sh ;;
+    16) net ;;
+    17) cache ;;
+    18) ${SCPfrm}/ultrahost ;;
+    19) ${SCPfrm}/speed.py ;;
+    20) oracl ;;
+    21) extra ;;
+    *)
+        msg -verm2 " Please Select The Correct Number"
+        sleep 1.s
+        menu3
+        ;;
+    esac
+}
+extra() {
+    clear
+    clear
+    msg -bar
+    msg -tit
+    on="\033[1;32m[ON]" && off="\033[1;31m[OFF]"
+    [[ $(grep -c "^#ADM" /etc/sysctl.conf) -eq 0 ]] && tcp=$off || tcp=$on
+    if [ -e /etc/squid/squid.conf ]; then
+        [[ $(grep -c "^#CACHE_DO_SQUID" /etc/squid/squid.conf) -gt 0 ]] && squi=$off || squi=$on
+    elif [ -e /etc/squid3/squid.conf ]; then
+        [[ $(grep -c "^#CACHE_DO_SQUID" /etc/squid3/squid.conf) -gt 0 ]] && squi=$off || squi=$on
+    fi
+    echo -e "		\e[91m\e[43mBASIC TOOLS\e[0m"
+    msg -bar
+    echo -e " \e[1;93m[\e[92m1\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "UPDATE LOCAL TIME")"
+    echo -e " \e[1;93m[\e[92m2\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "HTOP")"
+    echo -e " \e[1;93m[\e[92m3\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "MODIFY ACTIVE PORTS")"
+    echo -e " \e[1;93m[\e[92m4\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "PAYLOAD BRUTEFORCE")"
+    echo -e " \e[1;93m[\e[92m5\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "TCP SPEED") $tcp"
+    echo -e " \e[1;93m[\e[92m6\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "CACHE FOR SQUID") $squi"
+    echo -e " \e[1;93m[\e[92m7\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "CLEAN OUT-OBSOLETE PACKAGES")"
+    echo -e " \e[1;93m[\e[92m8\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "RESET IPTABLES")"
+    echo -e " \e[1;93m[\e[92m9\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "RESTART VPS")"
+    echo -e " \e[1;93m[\e[92m10\e[93m]$(msg -verm2 "➛ ")$(msg -azu "CHANGE VPS HOSTNAME")"
+    echo -e " \e[1;93m[\e[92m11\e[93m]$(msg -verm2 "➛ ")$(msg -azu "CHANGE ROOT PASSWORD")"
+    echo -e " \e[1;93m[\e[92m12\e[93m]$(msg -verm2 "➛ ")$(msg -azu "ADD ROOT to GoogleCloud and Amazon")"
+    echo -e " \e[1;93m[\e[92m13\e[93m]$(msg -verm2 "➛ ")$(msg -azu "AUTHENTICATE SQUID")"
+    echo -e " \e[1;93m[\e[92m0\e[93m]$(msg -verm2 " ➛ ")$(msg -azu "RETURN")"
+    msg -bar
+    echo -ne " ►\e[1;37m Select An Option: \e[33m " && read select
+    case $select in
+    0) menu3 ;;
+    1) horas ;;
+    2) monhtop ;;
+    3)
+        ${SCPfrm}/ports.sh && msg -ne "Enter To Continue" && read enter
+        menu3
+        ;;
+    4) ${SCPfrm}/paysnd.sh ;;
+    5) TCPspeed ;;
+    6) SquidCACHE ;;
+    7) packobs ;;
+    8) resetiptables ;;
+    9) reiniciar_vps ;;
+    10) host_name ;;
+    11) cambiopass ;;
+    12) rootpass ;;
+    13) ${SCPfrm}/squidpass.sh ;;
+    *) ;;
+    esac
+}
+reiniciar_vps() {
+    echo -ne " \033[1;31m[ ! ] Sudo Reboot"
+    sleep 3s
+    echo -e "\033[1;32m [OK]"
+    (
+        sudo reboot
+    ) >/dev/null 2>&1
+    msg -bar
+    return
+}
+host_name() {
+    unset name
+    while [[ ${name} = "" ]]; do
+        echo -ne "\033[1;37m $(fun_trans "New host name"): " && read name
+        tput cuu1 && tput dl1
+    done
+    hostnamectl set-hostname $name
+    if [ $(hostnamectl status | head -1 | awk '{print $3}') = "${name}" ]; then
+        echo -e "\033[1;33m $(fun_trans "Host successfully altered")!, $(fun_trans "restart VPS")"
+    else
+        echo -e "\033[1;33m $(fun_trans "Host not modified")!"
+    fi
+    msg -bar
+    return
+}
+cambiopass() {
+    echo -e "${cor[3]} $(fun_trans "This tool changes the password of your vps server")"
+    echo -e "${cor[3]} $(fun_trans "This password is used as user") root"
+    msg -bar
+    echo -ne " $(fun_trans "Want to Continue?") [Y/N]: "
+    read x
+    [[ $x = @(n|N) ]] && msg -bar && return
+    msg -bar
+    echo -e "${cor[0]} $(fun_trans "Type your new password")"
+    msg -bar
+    read -p "New password: " pass
+    (
+        echo $pass
+        echo $pass
+    ) | passwd 2>/dev/null
+    sleep 1s
+    msg -bar
+    echo -e "${cor[3]} $(fun_trans "Password changed successfully!")"
+    echo -e "${cor[2]} $(fun_trans "Your password is now"): ${cor[4]}$pass"
+    msg -bar
+    return
+}
+dnsnetflix() {
+    echo "nameserver $dns1" >/etc/resolv.conf
+    echo "nameserver $dns2" >>/etc/resolv.conf
+    /etc/init.d/ssrmu stop &>/dev/null
+    /etc/init.d/ssrmu start &>/dev/null
+    /etc/init.d/shadowsocks-r stop &>/dev/null
+    /etc/init.d/shadowsocks-r start &>/dev/null
+    msg -bar2
+    echo -e "${cor[4]}  DNS SUCCESSFULLY ADDED"
+}
+net() {
+    clear
+    msg -bar2
+    msg -tit
+    echo -e "\033[1;93m     PERSONAL DNS AGGREGATOR"
+    msg -bar2
+    echo -e "\033[1;39m This function will allow you to watch Netflix with your VPS"
+    msg -bar2
+    echo -e "\033[1;39m In APPS like HTTP Injector,KPN Rev,HTTP CUSTOM, etc."
+    echo -e "\033[1;39m They must be added in the application to use these DNS."
+    echo -e "\033[1;39m In APPS like SS,SSR,V2RAY you don't need to add them."
+    msg -bar2
+    echo -e "\033[1;93m Remember to choose between 1 DNS either USA, BR, MX, CL \n according to the BOT given to you."
+    echo ""
+    echo -e "\033[1;97m Enter your Primary DNS: \033[0;91m"
+    read -p " Primary Dns: " dns1
+    echo -e "\033[1;97m Enter your Secondary DNS: \033[0;91m"
+    read -p " Secondary Dns: " dns2
+    echo ""
+    msg -bar2
+    read -p " Are you sure to continue??  [ s | n ]: " dnsnetflix
+    [[ "$dnsnetflix" = "s" || "$dnsnetflix" = "S" ]] && dnsnetflix
+    msg -bar2
+}
+rootpass() {
+    clear
+    msg -bar
+    echo -e "${cor[3]}  This tool changes to root user the VPS of "
+    echo -e "${cor[3]}             Google Cloud and Amazon"
+    msg -bar
+    echo -ne " Want to Continue? [Y/N]: "
+    read x
+    [[ $x = @(n|N) ]] && msg -bar && return
+    msg -bar
+    echo -e "                 Applying Settings"
+    fun_bar "service ssh restart"
+    sed -i "s;PermitRootLogin prohibit-password;PermitRootLogin yes;g" /etc/ssh/sshd_config
+    sed -i "s;PermitRootLogin without-password;PermitRootLogin yes;g" /etc/ssh/sshd_config
+    sed -i "s;PasswordAuthentication no;PasswordAuthentication yes;g" /etc/ssh/sshd_config
+    msg -bar
+    echo -e "Type your current root password or change it"
+    msg -bar
+    read -p "New password: " pass
+    (
+        echo $pass
+        echo $pass
+    ) | passwd 2>/dev/null
+    sleep 1s
+    msg -bar
+    echo -e "${cor[3]} Configurations applied successfully!"
+    echo -e "${cor[2]} Your password is now: ${cor[4]}$pass"
+    service ssh restart >/dev/null 2>&1
+    msg -bar
+    return
+}
+resetiptables() {
+    echo -e "Restarting Ipetables please wait"
+    iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X && iptables -t mangle -F && iptables -t mangle -X && iptables -t raw -F && iptables -t raw -X && iptables -t security -F && iptables -t security -X && iptables -P INPUT ACCEPT && iptables -P FORWARD ACCEPT && iptables -P OUTPUT ACCEPT
+    echo -e "iptables restarted successfully"
+}
+packobs() {
+    msg -ama "Finding Outdated Packages"
+    dpkg -l | grep -i ^rc
+    msg -ama "Cleaning Obsolete Packages"
+    dpkg -l | grep -i ^rc | cut -d " " -f 3 | xargs dpkg --purge
+    msg -ama "Wipe completed"
+}
+TCPspeed() {
+    if [[ $(grep -c "^#ADM" /etc/sysctl.conf) -eq 0 ]]; then
+        msg -ama "$(fun_trans "TCP Speed ​​Not Activated, Want to Activate it Now")?"
+        msg -bar
+        while [[ ${resposta} != @(s|S|n|N|y|Y) ]]; do
+            read -p " [Y/N]: " -e -i s resposta
+            tput cuu1 && tput dl1
+        done
+        [[ "$resposta" = @(s|S|y|Y) ]] && {
+            echo "#ADM" >>/etc/sysctl.conf
+            echo "net.ipv4.tcp_window_scaling = 1
+ net.core.rmem_max = 16777216
+ net.core.wmem_max = 16777216
+ net.ipv4.tcp_rmem = 4096 87380 16777216
+ net.ipv4.tcp_wmem = 4096 16384 16777216
+ net.ipv4.tcp_low_latency = 1
+ net.ipv4.tcp_slow_start_after_idle = 0" >>/etc/sysctl.conf
+            sysctl -p /etc/sysctl.conf >/dev/null 2>&1
+            msg -ama "$(fun_trans "TCP Active Successful")!"
+        } || msg -ama "$(fun_trans "Cancelled")!"
+    else
+        msg -ama "$(fun_trans "TCP Speed ​​is already activated, you want to stop it now")?"
+        msg -bar
+        while [[ ${resposta} != @(s|S|n|N|y|Y) ]]; do
+            read -p " [Y/N]: " -e -i s resposta
+            tput cuu1 && tput dl1
+        done
+        [[ "$resposta" = @(s|S|y|Y) ]] && {
+            grep -v "^#ADM
+ net.ipv4.tcp_window_scaling = 1
+ net.core.rmem_max = 16777216
+ net.core.wmem_max = 16777216
+ net.ipv4.tcp_rmem = 4096 87380 16777216
+ net.ipv4.tcp_wmem = 4096 16384 16777216
+ net.ipv4.tcp_low_latency = 1
+ net.ipv4.tcp_slow_start_after_idle = 0" /etc/sysctl.conf >/tmp/syscl && mv -f /tmp/syscl /etc/sysctl.conf
+            sysctl -p /etc/sysctl.conf >/dev/null 2>&1
+            msg -ama "$(fun_trans "TCP Stopped Successfully")!"
+        } || msg -ama "$(fun_trans "Cancelled")!"
+    fi
+}
+SquidCACHE() {
+    msg -ama "$(fun_trans "Squid Cache, Apply cache in Squid")"
+    msg -ama "$(fun_trans "Improves squid speed")"
+    msg -bar
+    if [ -e /etc/squid/squid.conf ]; then
+        squid_var="/etc/squid/squid.conf"
+    elif [ -e /etc/squid3/squid.conf ]; then
+        squid_var="/etc/squid3/squid.conf"
+    else
+        msg -ama "$(fun_trans "Your system does not have a squid")!" && return 1
+    fi
+    teste_cache="#CACHE_DO_SQUID"
+    if [[ $(grep -c "^$teste_cache" $squid_var) -gt 0 ]]; then
+        [[ -e ${squid_var}.bakk ]] && {
+            msg -ama "$(fun_trans "Cache squid identified, deleting")!"
+            mv -f ${squid_var}.bakk $squid_var
+            msg -ama "$(fun_trans "Cache squid Removed")!"
+            service squid restart >/dev/null 2>&1 &
+            service squid3 restart >/dev/null 2>&1 &
+            return 0
+        }
+    fi
+    msg -ama "$(fun_trans "Applying Cache Squid")!"
+    msg -bar
+    _tmp="#CACHE_DO_SQUID\ncache_mem 200 MB\nmaximum_object_size_in_memory 32 KB\nmaximum_object_size 1024 MB\nminimum_object_size 0 KB\ncache_swap_low 90\ncache_swap_high 95"
+    [[ "$squid_var" = "/etc/squid/squid.conf" ]] && _tmp+="\ncache_dir ufs /var/spool/squid 100 16 256\naccess_log /var/log/squid/access.log squid" || _tmp+="\ncache_dir ufs /var/spool/squid3 100 16 256\naccess_log /var/log/squid3/access.log squid"
+    while read s_squid; do
+        [[ "$s_squid" != "cache deny all" ]] && _tmp+="\n${s_squid}"
+    done <$squid_var
+    cp ${squid_var} ${squid_var}.bakk
+    echo -e "${_tmp}" >$squid_var
+    msg -ama "$(fun_trans "Cache Applied Successfully")!"
+    service squid restart >/dev/null 2>&1 &
+    service squid3 restart >/dev/null 2>&1 &
+}
+oracl() {
+    clear
+    msg -bar
+    msg -tit
+    msg -verm "		FIREWALLD"
+    msg -ama " THIS TOOL IS FOR ORACLE/AWS/AZR VPS"
+    msg -ama " ALSO FOR OTHER VPS THAT ARE NECESSARY TO USE THIS OPTION"
+    echo -ne " Do you wish to continue? [Y/N]: "
+    read x
+    [[ $x = @(n|N) ]] && msg -bar && return
+    msg -bar
+    sudo apt update -y &>/dev/null
+    sudo apt install firewalld -y &>/dev/null
+    sudo apt install apache2 &>/dev/null
+    sudo firewall-cmd --zone=public --permanent --add-port=80/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=81/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=90/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=110/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=143/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=442/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=443/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=444/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=8080/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=8081/tcp
+    sudo firewall-cmd --zone=public --permanent --add-port=5300/udp
+    sudo firewall-cmd --zone=public --permanent --add-port=7200/udp
+    sudo firewall-cmd --zone=public --permanent --add-port=7300/udp
+    sudo firewall-cmd --reload
+    sudo firewall-cmd --zone=public --list-ports &>/dev/null
+    msg -azu "	FIX ADDED"
+}
+cache() {
+    clear
+    msg -bar
+    msg -verm "	FREEING CACHE/RAM"
+    msg -bar
+    me() {
+        echo 3 >/proc/sys/vm/drop_caches &>/dev/null
+        sysctl -w vm.drop_caches=3 &>/dev/null
+        apt-get autoclean -y &>/dev/null
+        apt-get clean -y &>/dev/null
+    }
+    me &>/dev/null && msg -ama " REFRESHING RAM" | pv -qL20
+    sleep 2s
+    if [[ ! -z $(crontab -l | grep -w "vm.drop_caches=3") ]]; then
+        msg -azu " Auto cleaning scheduled every $(msg -verd "[ $(crontab -l | grep -w "vm.drop_caches=3" | awk '{print $2}' | sed $'s/[^[:alnum:]\t]//g')HS ]")"
+        msg -bar
+        while :; do
+            echo -ne "$(msg -azu " Stop Auto Clean [Y/N]: ")" && read t_ram
+            tput cuu1 && tput dl1
+            case $t_ram in
+            y | Y)
+                crontab -l >/root/cron && sed -i '/vm.drop_caches=3/ d' /root/cron && crontab /root/cron && rm /root/cron
+                msg -azu " Auto-Clean Stopped!" && msg -bar && sleep 2
+                return 1
+                ;;
+            n | N) return 1 ;;
+            *) menu3 ;;
+            esac
+        done
+    fi
+    echo -ne "$(msg -azu "You want to schedule the Self-Clean [Y/N]:") "
+    read c_ram
+    if [[ $c_ram = @(s|S|y|Y) ]]; then
+        tput cuu1 && tput dl1
+        echo -ne "$(msg -azu " ENTER A NUMBER, EXAMPLE [1-12 HOURS]:") "
+        read ram_c
+        if [[ $ram_c =~ ^[0-9]+$ ]]; then
+            crontab -l >/root/cron
+            echo "0 */$ram_c * * * sudo sysctl -w vm.drop_caches=3 > /dev/null 2>&1" >>/root/cron
+            crontab /root/cron
+            rm /root/cron
+            tput cuu1 && tput dl1
+            msg -azu " Scheduled Self-Cleaning every: $(msg -verd "${ram_c} HORAS")" && msg -bar && sleep 2
+        else
+            tput cuu1 && tput dl1
+            msg -verm2 " enter only numbers between 1 and 12"
+            sleep 2
+            msg -bar
+        fi
+    fi
+    return 1
+}
+pidr_inst() {
+    proto="dropbear python stunnel4 v2ray node badvpn squid openvpn dns-serve ssserver ss-server"
+    portas=$(lsof -V -i -P -n | grep -v "ESTABLISHED" | grep -v "COMMAND")
+    for list in $proto; do
+        case $list in
+        dropbear | python | stunnel4 | v2ray | node | badvpn | squid | openvpn | ssserver | ss-server)
+            portas2=$(echo $portas | grep -w "LISTEN" | grep -w "$list")
+            [[ $(echo "${portas2}" | grep "$list") ]] && inst[$list]="\033[1;32m[ON] " || inst[$list]="\033[1;31m[OFF]"
+            ;;
+        dns-serve)
+            portas2=$(echo $portas | grep -w "$list")
+            [[ $(echo "${portas2}" | grep "$list") ]] && inst[$list]="\033[1;32m[ON] " || inst[$list]="\033[1;31m[OFF]"
+            ;;
+        esac
+    done
+}
+menu_func() {
+    local options=${#@}
+    local array
+    for ((num = 1; num <= $options; num++)); do
+        echo -ne "  $(msg -verd "\e[1;93m[\e[92m$num\e[93m]") $(msg -verm2 "➛ ") "
+        array=(${!num})
+        case ${array[0]} in
+        "-vd") msg -verd "\033[1;33m[!]\033[1;32m $(fun_trans "${array[@]:1}")" | sed ':a;N;$!ba;s/\n/ /g' ;;
+        "-vm") msg -verm2 "\033[1;33m[!]\033[1;31m $(fun_trans "${array[@]:1}")" | sed ':a;N;$!ba;s/\n/ /g' ;;
+        "-fi") msg -azu "$(fun_trans "${array[@]:2}") ${array[1]}" | sed ':a;N;$!ba;s/\n/ /g' ;;
+        *) msg -azu "$(fun_trans "${array[@]}")" | sed ':a;N;$!ba;s/\n/ /g' ;;
+        esac
+    done
+}
+selection_fun() {
+    local selection="null"
+    local range
+    for ((i = 0; i <= $1; i++)); do range[$i]="$i "; done
+    while [[ ! $(echo ${range[*]} | grep -w "$selection") ]]; do
+        echo -ne "\033[1;37m$(fun_trans " ► Select An Option"): " >&2
+        read selection
+        tput cuu1 >&2 && tput dl1 >&2
+    done
+    echo $selection
+}
+export -f msg
+export -f selection_fun
+export -f fun_trans
+export -f menu_func
+export -f meu_ip
+export -f fun_ip
+export -f lacasita
+clear
+sudo sync
+sudo sysctl -w vm.drop_caches=3 >/dev/null 2>&1
+clear
+clear
+msg -bar
+msg -tit
+menu_info
+msg -bar
+title=$(echo -e "\033[1;96m$(cat ${SCPdir}/message.txt)")
+printf "%*s\n" $((($(echo -e "$title" | wc -c) + 55) / 2)) "$title"
+msg -bar
+monservi_fun() {
+    clear
+    clear
+    monssh() {
+        sed -i "57d" /bin/monitor.sh
+        sed -i '57i EstadoServicio ssh' /bin/monitor.sh
+    }
+    mondropbear() {
+        sed -i "59d" /bin/monitor.sh
+        sed -i '59i EstadoServicio dropbear' /bin/monitor.sh
+    }
+    monssl() {
+        sed -i "61d" /bin/monitor.sh
+        sed -i '61i EstadoServicio stunnel4' /bin/monitor.sh
+    }
+    monsquid() {
+        sed -i "63d" /bin/monitor.sh
+        sed -i '63i [[ $(EstadoServicio squid) ]] && EstadoServicio squid3' /bin/monitor.sh
+    }
+    monapache() {
+        sed -i "65d" /bin/monitor.sh
+        sed -i '65i EstadoServicio apache2' /bin/monitor.sh
+    }
+    monv2ray() {
+        sed -i "55d" /bin/monitor.sh
+        sed -i '55i EstadoServicio v2ray' /bin/monitor.sh
+    }
+    msg -bar
+    msg -tit
+    echo -e "\033[1;32m          MAIN SERVICES MONITOR"
+    PIDVRF3="$(ps aux | grep "${SCPdir}/menu monitorservi" | grep -v grep | awk '{print $2}')"
+    PIDVRF5="$(ps aux | grep "${SCPdir}/menu moni2" | grep -v grep | awk '{print $2}')"
+    if [[ -z $PIDVRF3 ]]; then
+        sed -i '5a\screen -dmS very3 /etc/VPS-AGN/menu monitorservi' /bin/resetsshdrop
+        msg -bar
+        echo -e "\033[1;34m          ¿Monitor SSH/SSHD Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " monssh
+        sed -i "57d" /bin/monitor.sh
+        sed -i '57i #EstadoServicio ssh' /bin/monitor.sh
+        [[ "$monssh" = "s" || "$monssh" = "S" ]] && monssh
+        msg -bar
+        echo -e "\033[1;34m          ¿Monitor DROPBEAR Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " mondropbear
+        sed -i "59d" /bin/monitor.sh
+        sed -i '59i #EstadoServicio dropbear' /bin/monitor.sh
+        [[ "$mondropbear" = "s" || "$mondropbear" = "S" ]] && mondropbear
+        msg -bar
+        echo -e "\033[1;34m            ¿Monitor SSL Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " monssl
+        sed -i "61d" /bin/monitor.sh
+        sed -i '61i #EstadoServicio stunnel4' /bin/monitor.sh
+        [[ "$monssl" = "s" || "$monssl" = "S" ]] && monssl
+        msg -bar
+        echo -e "\033[1;34m            ¿Monitor SQUID Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " monsquid
+        sed -i "63d" /bin/monitor.sh
+        sed -i '63i #[[ $(EstadoServicio squid) ]] && EstadoServicio squid3' /bin/monitor.sh
+        [[ "$monsquid" = "s" || "$monsquid" = "S" ]] && monsquid
+        msg -bar
+        echo -e "\033[1;34m            ¿Monitor APACHE Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " monapache
+        sed -i "65d" /bin/monitor.sh
+        sed -i '65i #EstadoServicio apache2' /bin/monitor.sh
+        [[ "$monapache" = "s" || "$monapache" = "S" ]] && monapache
+        msg -bar
+        echo -e "\033[1;34m            ¿Monitor V2RAY Protocol?"
+        msg -bar
+        read -p "                    [ s | n ]: " monv2ray
+        sed -i "55d" /bin/monitor.sh
+        sed -i '55i #EstadoServicio v2ray' /bin/monitor.sh
+        [[ "$monv2ray" = "s" || "$monv2ray" = "S" ]] && monv2ray
+        cd ${SCPdir}
+        screen -dmS very3 ${SCPdir}/menu monitorservi
+        screen -dmS monis2 ${SCPdir}/menu moni2
+    else
+        for pid in $(echo $PIDVRF3); do
+            kill -9 $pid &>/dev/null
+            sed -i "6d" /bin/resetsshdrop
+        done
+        for pid in $(echo $PIDVRF5); do
+            kill -9 $pid &>/dev/null
+        done
+    fi
+    msg -bar
+    echo -e "             You can monitor from:\n       \033[1;32m http://$(meu_ip):81/monitor.html"
+    msg -bar
+    [[ -z ${VERY3} ]] && monitorservi="\033[1;32m ENABLED " || monitorservi="\033[1;31m DISABLED "
+    echo -e "            $monitorservi  --  SUCCESSFULLY"
+    msg -bar
+}
+monitor_auto() {
+    while true; do
+        monitor.sh 2>/dev/null
+        sleep 90s
+    done
+}
+if [[ "$1" = "monitorservi" ]]; then
+    monitor_auto
+    exit
+fi
+pid_kill() {
+    [[ -z $1 ]] && refurn 1
+    pids="$@"
+    for pid in $(echo $pids); do
+        kill -9 $pid &>/dev/null
+    done
+}
+monitorport_fun() {
+    while true; do
+        pidproxy3=$(ps x | grep "PDirect.py" | grep -v "grep" | awk -F "pts" '{print $1}') && [[ ! -z $pidproxy3 ]] && pid_kill $pidproxy3
+        pidpyssl=$(ps x | grep "python.py" | grep -v "grep" | awk -F "pts" '{print $1}') && [[ ! -z $pidpyssl ]] && pid_kill $pidpyssl
+        sleep 6h
+    done
+}
+if [[ "$1" = "moni2" ]]; then
+    monitorport_fun
+    exit
+fi
+SSHN="$(grep -c home /etc/passwd)"
+echo "${SSHN}" | bc >/etc/VPS-AGN/controller/SSH20.log
+SSH3="$(less /etc/VPS-AGN/controller/SSH20.log)"
+SSH4="$(echo $SSH3)"
+user_info=$(cd /usr/local/shadowsocksr &>/dev/null && python mujson_mgr.py -l)
+user_total=$(echo "${user_info}" | wc -l)
+[[ ! -e /etc/VPS-AGN/RegV2ray ]] && touch /etc/VPS-AGN/RegV2ray
+vray=$(cat /etc/VPS-AGN/RegV2ray | wc -l)
+on="\033[1;92m[ON]" && off="\033[1;31m[OFF]"
+echo -e "\033[1;97m   SSH REG:\033[1;92m $SSH4 \033[1;97m   SS-SSRR REG:\033[1;92m $user_total \033[1;97m   V2RAY REG:\e[32m $vray"
+VERY="$(ps aux | grep "${SCPusr}/usercodes verificar" | grep -v grep)"
+VERY2="$(ps aux | grep "${SCPusr}/usercodes desbloqueo" | grep -v grep)"
+VERY3="$(ps aux | grep "${SCPdir}/menu monitorservi" | grep -v grep)"
+limseg="$(less /etc/VPS-AGN/controller/tiemlim.log)"
+[[ -z ${VERY} ]] && verificar="\033[1;31m[OFF]" || verificar="\033[1;32m[ON] "
+[[ -z ${VERY2} ]] && desbloqueo="\033[1;31m[OFF]" || desbloqueo="\033[1;32m[ON] "
+[[ -z ${VERY3} ]] && monitorservi="\033[1;31m[OFF]" || monitorservi="\033[1;32m[ON]"
+[[ -e ${SCPdir}/USRonlines ]] && msg -bar && msg -ne "\033[1;97m LIMITER:\033[1;92m$verificar \033[1;97m AUTO-UNLOCK:\033[1;92m$desbloqueo \e[1;97mMONITOR:\e[34m${limseg}s\n \033[1;32mCONNECTED: " && echo -ne "\033[1;97m$(cat ${SCPdir}/USRonlines) "
+[[ -e ${SCPdir}/USRexpired ]] && msg -ne "   EXPIRED: " && echo -ne "\033[1;97m$(cat ${SCPdir}/USRexpired) " && msg -ne " \033[1;95m BLOCKED: " && echo -e "\033[1;97m$(cat ${SCPdir}/USRbloqueados)" #\n\033[1;97m        MONITOR UPDATE EVERY: \033[1;34m $limseg s"
+monhtop() {
+    clear
+    msg -bar
+    msg -tit
+    echo -ne " \033[1;93m             HTOP PROCESS MONITOR\n"
+    msg -bar
+    msg -bra "   REMEMBER TO EXIT WITH: \033[1;96m CTRL + C o FIN + F10 "
+    [[ $(dpkg --get-selections | grep -w "htop" | head -1) ]] || apt-get install htop -y &>/dev/null
+    msg -bar
+    read -t 10 -n 1 -rsp $'\033[1;39m Enter To Continue\n'
+    clear
+    sudo htop
+    msg -bar
+    echo -e "\e[97m \033[1;41m| #-#-►  SCRIPT VPS•AGN ◄-#-# | \033[1;49m\033[1;49m \033[1;31m[ \033[1;32m $vesaoSCT      "
+    echo -ne " \033[1;93m             HTOP PROCESS MONITOR\n"
+    msg -bar
+    echo -e "\e[97m                  END OF MONITOR"
+    msg -bar
+}
+[[ $(ps x | grep v2ray | grep -v grep | awk '{print $1}') ]] && vra=$on || vra=$off
+msg -bar
+msg -bar3
+on="\e[1;32m[ON]" && off="\e[1;31m[OFF]"
+echo -e " \e[1;93m[\e[92m1\e[93m] $(msg -verm2 "➛ ") $(msg -azu "MANAGE ACCOUNTS | SSH/SSL/DROP")"
+echo -e " \e[1;93m[\e[92m2\e[93m] $(msg -verm2 "➛ ") $(msg -azu "MANAGE ACCOUNTS | SS/SSRR")"
+echo -e " \e[1;93m[\e[92m3\e[93m] $(msg -verm2 "➛ ") $(msg -azu "MANAGE ACCOUNTS | V2RAY --> $vra")"
+echo -e " \e[1;93m[\e[92m4\e[93m] $(msg -verm2 "➛ ") \e[1;31m\033[47mPROTOCOLS\e[0m  \e[93m||  \e[1;37m\e[41mTOOLS\e[0m"
+echo -e " \e[1;93m[\e[92m5\e[93m] $(msg -verm2 "➛ ") $(msg -azu "PROTOCOLS MONITOR --------> ${monitorservi}")"
+echo -e " \e[1;93m[\e[92m6\e[93m] $(msg -verm2 "➛ ") $(msg -azu "AUTO START SCRIPT ----------> ${AutoRun}")"
+msg -bar
+echo -e " \e[1;93m[\e[92m7\e[93m] \e[97m$(msg -verm2 "➛ ") $(msg -verd "UPDATE") \e[1;93m [\e[92m8\e[93m]\e[97m$(msg -verm2 "➛ ")\033[1;31mUNINSTALL  \e[1;93m[\e[92m0\e[93m]$(msg -verm2 "➛ ") $(msg -bra "\e[97m\033[1;41mEXIT")"
+msg -bar
+selection=$(selection_fun 13)
+case ${selection} in
+1) ${SCPusr}/usercodes ;;
+2) ${SCPinst}/C-SSR.sh ;;
+3) ${SCPinst}/v2ray.sh ;;
+4) menu3 ;;
+5) monservi_fun ;;
+6) fun_autorun ;;
+7) atualiza_fun ;;
+8) remove_script ;;
+0) cd $HOME && exit 0 ;;
+esac
+msg -ne "Enter To Continue" && read enter
+${SCPdir}/menu
