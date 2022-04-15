@@ -2,7 +2,7 @@
 ```
 * VPS-AGN (Final Version OF VPS-MX 8.5x)
 ```
-![logo](https://github.com/khaledagn/VPS-AGN_English_Official/blob/master/VPS-AGN.png)
+![logo](https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/main/VPS-AGN.png)
 
 ```
 # SCRIPT VPS•AGN ® VPS Script Manager
