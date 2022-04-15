@@ -252,6 +252,7 @@ install_official() {
   rm -rf /etc/VPS-AGN/MEUIPvps
   echo "/etc/VPS-AGN/menu" >/usr/bin/menu && chmod +x /usr/bin/menu
   echo "/etc/VPS-AGN/menu" >/usr/bin/VPSAGN && chmod +x /usr/bin/VPSAGN
+  wget https://raw.githubusercontent.com/khaledagn/VPS-AGN_English_Official/master/LINKS-LIBRARIES/monitor.sh -P /bin/
   echo "$slogan" >/etc/VPS-AGN/message.txt
   [[ ! -d /usr/local/lib ]] && mkdir /usr/local/lib
   [[ ! -d /usr/local/lib/ubuntn ]] && mkdir /usr/local/lib/ubuntn
