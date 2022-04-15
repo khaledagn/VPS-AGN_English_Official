@@ -170,9 +170,9 @@ install_start() {
   msg -bar
   print_center -ama "System packages are updating.\n It may take a while and ask for some confirmations.\n"
   msg -bar3
-  msg -ne "\n Do you wish to continue? [S/N]: "
+  msg -ne "\n Do you wish to continue? [Y/N]: "
   read opcion
-  [[ "$opcion" != @(s|S) ]] && stop_install
+  [[ "$opcion" != @(y|Y) ]] && stop_install
   clear && clear
   msg -bar
   echo -e "\e[1;97m           \e[5m\033[1;100m   SYSTEM UPDATE   \033[1;37m"
@@ -208,7 +208,7 @@ while :; do
   -s | --start) install_start && post_reboot && time_reboot "15" ;;
   -c | --continue)
     #rm /root/install-without-key.sh &>/dev/null
-    sed -i '/Instalador/d' /root/.bashrc
+    sed -i '/installer/d' /root/.bashrc
     install_continue
     break
     ;;
