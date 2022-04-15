@@ -44,7 +44,7 @@ BOT MANAGER:
 * Version 8.5 Preffered Ubuntu 20.04 Server x86_64
 * It is recommended to use a new or formatted distro
 
-## :book: Installation
+# Installation
 
 rm -rf install-without-key.sh; apt update; apt upgrade -y; apt install curl; wget https://github.com/khaledagn/VPS-AGN_English_Official/raw/main/installer/install-without-key.sh; chmod 777 install-without-key.sh; ./install-without-key.sh --start
 
