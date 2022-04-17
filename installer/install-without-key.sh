@@ -178,8 +178,8 @@ install_start() {
   echo -e "\e[1;97m           \e[5m\033[1;100m   SYSTEM UPDATE   \033[1;37m"
   msg -bar
   os_system
-  repo "${vercion}"
   apt update -y
+  apt upgrade -y
 }
 
 install_continue() {
