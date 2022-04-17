@@ -179,6 +179,8 @@ install_start() {
   msg -bar
   os_system
   repo "${vercion}"
+  sudo apt-get install software-properties-common
+  sudo add-apt-repository universe multiverse
   apt update -y
   apt upgrade -y
 }
